@@ -17,9 +17,9 @@ from torch.nn import CrossEntropyLoss, Dropout, Softmax, Linear, Conv2d, LayerNo
 from torch.nn.modules.utils import _pair
 from scipy import ndimage
 
-import models.configs as configs
+import model.utils as configs
 
-from .modeling_resnet import ResNetV2
+from .resnet import ResNetV2
 
 
 logger = logging.getLogger(__name__)
@@ -152,7 +152,7 @@ class Embeddings(nn.Module):
 
         self.dropout = Dropout(config.transformer["dropout_rate"])
 
-    def forward(self, x, mask=None):
+    def forward(self, x):
         B = x.shape[0]
         cls_tokens = self.cls_token.expand(B, -1, -1)
 
@@ -165,10 +165,6 @@ class Embeddings(nn.Module):
 
         embeddings = x + self.position_embeddings
         embeddings = self.dropout(embeddings)
-
-        if mask is not None:
-            embeddings = embeddings[mask==0].reshape(B, -1, embeddings.shape[-1])
-
         return embeddings
 
 
@@ -257,8 +253,8 @@ class Transformer(nn.Module):
         self.embeddings = Embeddings(config, img_size=img_size)
         self.encoder = Encoder(config, vis)
 
-    def forward(self, input_ids, mask=None):
-        embedding_output = self.embeddings(input_ids, mask=mask)
+    def forward(self, input_ids):
+        embedding_output = self.embeddings(input_ids)
         encoded, attn_weights = self.encoder(embedding_output)
         return encoded, attn_weights
 
@@ -273,11 +269,8 @@ class VisionTransformer(nn.Module):
         self.transformer = Transformer(config, img_size, vis)
         self.head = Linear(config.hidden_size, num_classes)
 
-    def forward(self, x, mask=None, labels=None):
-        x, attn_weights = self.transformer(x, mask)
-        # return x, attn_weights
-        # return x[:, 0], attn_weights[-1]
-        # return x[:, 0]
+    def forward(self, x, labels=None):
+        x, attn_weights = self.transformer(x)
         logits = self.head(x[:, 0])
 
         if labels is not None:
@@ -285,8 +278,7 @@ class VisionTransformer(nn.Module):
             loss = loss_fct(logits.view(-1, self.num_classes), labels.view(-1))
             return loss
         else:
-            # return logits, attn_weights
-            return x[:, 0], logits
+            return x[:, 0], attn_weights
 
     def load_from(self, weights):
         with torch.no_grad():
@@ -352,5 +344,4 @@ CONFIGS = {
     'ViT-H_14': configs.get_h14_config(),
     'R50-ViT-B_16': configs.get_r50_b16_config(),
     'testing': configs.get_testing(),
-    'VTS16': configs.get_vts16_config(configs.get_b16_config())
 }

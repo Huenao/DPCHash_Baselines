@@ -7,7 +7,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from configs import GreedyHash_get_config
-from model.datasets import My_dataset, MyCIFAR10_dataset
+from model.data import my_dataloader
 from model.vit import CONFIGS, VisionTransformer
 from utils.utils import evalModel, save_config
 
@@ -64,29 +64,6 @@ class GreedyHashModelUnsupervised(nn.Module):
             loss1 = F.mse_loss(target_b, target_x)
             loss2 = config["alpha"] * (h.abs() - 1).pow(3).abs().mean()
             return loss1 + loss2
-        
-
-def my_dataloader(config):
-    if "cifar" in config["dataset"]:
-        train_dataset, test_dataset, database_dataset, num_train, num_test, num_database = MyCIFAR10_dataset(config)
-    else:
-        train_dataset, test_dataset, database_dataset, num_train, num_test, num_database = My_dataset(config)
-
-    train_loader = torch.utils.data.DataLoader(dataset = train_dataset,
-                                               batch_size = config['batch_size'],
-                                               shuffle = True,
-                                               num_workers = config['num_workers'])
-
-    test_loader = torch.utils.data.DataLoader(dataset = test_dataset,
-                                              batch_size = config['batch_size'],
-                                              shuffle = False,
-                                              num_workers = config['num_workers'])
-
-    database_loader = torch.utils.data.DataLoader(dataset = database_dataset,
-                                                  batch_size = config['batch_size'],
-                                                  shuffle = False,
-                                                  num_workers = config['num_workers'])
-    return train_loader, test_loader, database_loader, num_train, num_test, num_database
 
 
 def trainer(config, bit):
@@ -99,12 +76,15 @@ def trainer(config, bit):
     train_loader, test_loader, database_loader, num_train, num_test, num_database = my_dataloader(config)
    
     """Model"""
+    device = torch.device('cuda')
     net = GreedyHashModelUnsupervised(bit, config)
-    # net = torch.nn.DataParallel(net)
-    net = net.cuda()
+    net = net.to(device)
 
     """Optimizer Setting"""
     optimizer = config["optimizer"]["type"](net.parameters(), **(config["optimizer"]["optim_params"]))
+
+    """Data Parallel"""
+    net = torch.nn.DataParallel(net)
 
     """Training"""
     for epoch in range(config["epoch"]):
@@ -121,7 +101,7 @@ def trainer(config, bit):
         net.train()
         train_loss = 0
         for image, _, _ in train_loader:
-            image = image.cuda()
+            image = image.to(device)
             optimizer.zero_grad()
 
             loss = net(image)
@@ -153,7 +133,6 @@ if __name__ == "__main__":
     
     config = GreedyHash_get_config(start_time)
     save_config(config, config["logs_path"])
-    os.environ['CUDA_VISIBLE_DEVICES'] = config['device']
     
     for bit in config["bit_list"]:
         trainer(config, bit)

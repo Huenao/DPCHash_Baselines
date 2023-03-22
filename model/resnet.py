@@ -15,10 +15,8 @@
 # Lint as: python3
 """Bottleneck ResNet v2 with GroupNorm and Weight Standardization."""
 import math
-
-from os.path import join as pjoin
-
 from collections import OrderedDict  # pylint: disable=g-importing-member
+from os.path import join as pjoin
 
 import torch
 import torch.nn as nn

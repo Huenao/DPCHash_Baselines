@@ -1,31 +1,13 @@
-import numpy as np 
-from PIL import Image
-from torchvision import transforms
-import torchvision.datasets as dsets
-from torch.utils.data import Dataset, DataLoader
 import cv2
+import numpy as np
+import torchvision.datasets as dsets
+from PIL import Image
+from torch.utils.data import DataLoader, Dataset
+from torchvision import transforms
 
-np.random.seed(6)
+from .dataset import GaussianBlur
 
-class GaussianBlur(object):
-    # Implements Gaussian blur as described in the SimCLR paper
-    def __init__(self, kernel_size, min=0.1, max=2.0):
-        self.min = min
-        self.max = max
-        # kernel size is set to be 10% of the image height/width
-        self.kernel_size = kernel_size
-
-    def __call__(self, sample):
-        sample = np.array(sample)
-
-        # blur the image with a 50% chance
-        prob = np.random.random_sample()
-
-        if prob < 0.5:
-            sigma = (self.max - self.min) * np.random.random_sample() + self.min
-            sample = cv2.GaussianBlur(sample, (self.kernel_size, self.kernel_size), sigma)
-
-        return sample
+np.random.seed(2022)
 
 class Data:
     def __init__(self, dataset):
@@ -71,6 +53,10 @@ class Data:
             test_dataset = MyTestDataset(self.X_test, self.Y_test, self.test_transforms, self.dataset)
             database_dataset = MyTestDataset(self.X_database, self.Y_database, self.test_transforms, self.dataset)
 
+        print('train dataset:', len(train_dataset))
+        print('test dataset:', len(val_dataset))
+        print('database dataset:', len(database_dataset))
+
         # DataLoader
         train_loader = DataLoader(dataset=train_dataset, batch_size=batch_size,
                                                 shuffle=shuffle_train,
@@ -90,16 +76,18 @@ class Data:
         
         return train_loader, val_loader, test_loader, database_loader
 
-class LabeledData(Data):
+
+class CIB_CIFAR_DataLoader(Data):
     def __init__(self, dataset):
         super().__init__(dataset=dataset)
     
     def load_datasets(self):
-        if(self.dataset == 'cifar10'):
+        if(self.dataset == 'cifar10-1'):
             self.topK = 1000
             self.X_train, self.Y_train, self.X_val, self.Y_val, self.X_test, self.Y_test, self.X_database, self.Y_database = get_cifar()
         else:
             raise NotImplementedError("Please use the right dataset!")
+
 
 class MyTrainDataset(Dataset):
     def __init__(self,data,labels, transform):
@@ -114,6 +102,7 @@ class MyTrainDataset(Dataset):
     
     def __len__(self):
         return len(self.data)
+
 
 class MyTestDataset(Dataset):
     def __init__(self,data,labels, transform,dataset):
@@ -131,20 +120,20 @@ class MyTestDataset(Dataset):
     def __len__(self):
         return len(self.data)
 
+
 def get_cifar():
     # Dataset
-    train_dataset = dsets.CIFAR10(root='./data/cifar10/',
+    train_dataset = dsets.CIFAR10(root='./dataset/cifar/',
                                 train=True,
                                 download=True)
 
-    test_dataset = dsets.CIFAR10(root='./data/cifar10/',
+    test_dataset = dsets.CIFAR10(root='./dataset/cifar/',
                                 train=False
                                 )
 
-    database_dataset = dsets.CIFAR10(root='./data/cifar10/',
-                                    train=True
+    database_dataset = dsets.CIFAR10(root='./dataset/cifar/',
+                                    train=False
                                     )
-
 
     # train with 5000 images
     X = train_dataset.data
@@ -190,4 +179,3 @@ def get_cifar():
     Y_database = np.eye(10)[database_dataset.targets]
 
     return X_train, Y_train, X_val, Y_val, X_test, Y_test, X_database, Y_database
-

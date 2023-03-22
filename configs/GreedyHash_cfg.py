@@ -1,5 +1,4 @@
 import os
-import sys
 
 import torch.optim as optim
 
@@ -8,9 +7,7 @@ from .utils import config_dataset
 
 def get_config(start_time):
     config = {
-        "dataset": "cifar10",
-        # "dataset": "cifar10-1",
-        # "dataset": "cifar10-2",
+        "dataset": "cifar10-1",
         # "dataset": "coco",
         # "dataset": "nuswide_21",
         
@@ -23,7 +20,6 @@ def get_config(start_time):
         "optimizer": {"type": optim.SGD, 
                       "epoch_lr_decrease": 30,
                       "optim_params": {"lr": 0.0001, "weight_decay": 5e-4, "momentum": 0.9}},
-        "device": '0',
         "epoch": 100,
         "test_map": 5,
         "batch_size": 64, 
@@ -32,7 +28,6 @@ def get_config(start_time):
         
         "resize_size": 224,
         "crop_size": 224,
-        "batch_size": 64,
         
         "alpha": 0.1,
     }
