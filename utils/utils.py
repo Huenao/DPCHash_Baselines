@@ -69,6 +69,36 @@ def compute_result(dataloader, net):
     return torch.cat(bs).sign(), torch.cat(clses)
 
 
+def compute_result_feas(dataloader, net):
+    bs, clses, feas = [], [], []
+    net.eval()
+    for img, cls, _ in tqdm(dataloader):
+        clses.append(cls)
+        b, fea = net(img.cuda())
+        bs.append(b.data.cpu())
+        feas.append(fea.data.cpu())
+    return torch.cat(bs).sign(), torch.cat(clses), torch.cat(feas)
+
+
+def compute_result_CIB(dataloader, net):
+    bs, clses = [], []
+    net.eval()
+    for img, cls in tqdm(dataloader):
+        clses.append(cls)
+        bs.append((net.encode_discrete(img.cuda())).data.cpu())
+    return torch.cat(bs).sign(), torch.cat(clses)
+
+
+def compute_result_vit(dataloader, net):
+    bs, clses = [], []
+    net.eval()
+    for img, cls, _ in tqdm(dataloader):
+        clses.append(cls)
+        hash_code = net(img.cuda())[1]
+        bs.append(hash_code.data.cpu())
+    return torch.cat(bs).sign(), torch.cat(clses)
+
+
 def CalcHammingDist(B1, B2):
     q = B2.shape[1]
     distH = 0.5 * (q - np.dot(B1, B2.transpose()))
@@ -99,10 +129,16 @@ def CalcTopMap(rB, qB, retrievalL, queryL, topk):
 
 def evalModel(test_loader, dataset_loader, net, Best_mAP, bit, config, epoch, f):
     print("calculating test binary code......")
-    tst_binary, tst_label = compute_result(test_loader, net)
+    if config['info'] == "CIBHash":
+        tst_binary, tst_label = compute_result_CIB(test_loader, net)
+    else:
+        tst_binary, tst_label = compute_result(test_loader, net)
 
     print("calculating dataset binary code.......")
-    trn_binary, trn_label = compute_result(dataset_loader, net)
+    if  config['info'] == "CIBHash":
+        trn_binary, trn_label = compute_result_CIB(dataset_loader, net)
+    else:
+        trn_binary, trn_label = compute_result(dataset_loader, net)
 
     print("calculating map.......")
     mAP = CalcTopMap(trn_binary.numpy(), tst_binary.numpy(), trn_label.numpy(), tst_label.numpy(),
