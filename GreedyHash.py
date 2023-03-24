@@ -28,10 +28,9 @@ class GreedyHashModel(nn.Module):
         self.vit = VisionTransformer(vit_config, 224, num_classes=1000, zero_head=False, vis=True)
         self.vit.load_from(np.load(vit_config.pretrained_dir))
 
-        if config['frozen_backbone']:
-            for param in self.vit.parameters():
-                param.requires_grad = False
-            self.vit.eval()
+        for param in self.vit.parameters():
+            param.requires_grad = False
+        self.vit.eval()
             
         self.fc_encode = nn.Linear(vit_config.hidden_size, bit)
 
@@ -95,9 +94,7 @@ def trainer(config, bit):
     criterion = GreedyHashLoss()
 
     """Optimizer Setting"""
-    # optimizer = config["optimizer"]["type"](net.parameters(), **(config["optimizer"]["optim_params"]))
-    optimizer = config["optimizer"]["type"]([{"params": net.fc_encode.parameters(), "lr": config["optimizer"]["lr"]},
-                                             {"params": net.vit.parameters(), "lr": config["optimizer"]["backbone_lr"]}])
+    optimizer = config["optimizer"]["type"](net.parameters(), **(config["optimizer"]["optim_params"]))
 
     """Data Parallel"""
     net = torch.nn.DataParallel(net)

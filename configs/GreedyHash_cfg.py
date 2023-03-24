@@ -19,11 +19,7 @@ def get_config(start_time):
 
         "frozen_backbone": True,
         "optimizer": {"type": optim.Adam,
-                      "lr": 0.001,
-                      "backbone_lr": 1e-5},
-        # "optimizer": {"type": optim.SGD, 
-        #               "epoch_lr_decrease": 30,
-        #               "optim_params": {"lr": 0.0001, "weight_decay": 5e-4, "momentum": 0.9}},
+                      "optim_params": {"lr": 0.001}},
         "epoch": 100,
         "test_map": 5,
         "batch_size": 64, 
