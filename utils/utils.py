@@ -85,7 +85,7 @@ def compute_result_CIB(dataloader, net):
     net.eval()
     for img, cls in tqdm(dataloader):
         clses.append(cls)
-        bs.append((net.encode_discrete(img.cuda())).data.cpu())
+        bs.append((net.module.encode_discrete(img.cuda())).data.cpu())
     return torch.cat(bs).sign(), torch.cat(clses)
 
 

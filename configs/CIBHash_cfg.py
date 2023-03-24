@@ -18,7 +18,7 @@ def get_config(start_time):
         "pretrained_dir": "pretrained_vit/imagenet21k_imagenet2012_ViT-B_16.npz",
 
         "optimizer": {"type": optim.Adam, 
-                      "optim_params": {"lr": 0.001}},
+                      "optim_params": {"lr": 0.0001}},
         "epoch": 100,
         "test_map": 5,
         "batch_size": 64, 

@@ -19,7 +19,7 @@ def get_config(start_time):
 
         "frozen_backbone": True,
         "optimizer": {"type": optim.Adam,
-                      "lr": 0.0001,
+                      "lr": 0.001,
                       "backbone_lr": 1e-5},
         # "optimizer": {"type": optim.SGD, 
         #               "epoch_lr_decrease": 30,
