@@ -18,19 +18,21 @@ torch.multiprocessing.set_sharing_strategy('file_system')
 # code [GreedyHash](https://github.com/ssppp/GreedyHash)
 
 
-class GreedyHashModelUnsupervised(nn.Module):
+class GreedyHashModel(nn.Module):
     def __init__(self, bit, config):
-        super(GreedyHashModelUnsupervised, self).__init__()
+        super(GreedyHashModel, self).__init__()
 
         vit_config = CONFIGS[config['backbone']]
         vit_config.pretrained_dir = config['pretrained_dir']
 
         self.vit = VisionTransformer(vit_config, 224, num_classes=1000, zero_head=False, vis=True)
         self.vit.load_from(np.load(vit_config.pretrained_dir))
-        for param in self.vit.parameters():
-            param.requires_grad = False
-        self.vit.eval()
 
+        if config['frozen_backbone']:
+            for param in self.vit.parameters():
+                param.requires_grad = False
+            self.vit.eval()
+            
         self.fc_encode = nn.Linear(vit_config.hidden_size, bit)
 
         # self.vgg = models.vgg16(pretrained=True)s
@@ -47,7 +49,7 @@ class GreedyHashModelUnsupervised(nn.Module):
         @staticmethod
         def backward(_, grad_output):
             return grad_output
-
+        
     def forward(self, x):
         x, _ = self.vit(x)
         # x = self.vgg.features(x)
@@ -55,15 +57,25 @@ class GreedyHashModelUnsupervised(nn.Module):
         # x = self.vgg.classifier(x)
 
         h = self.fc_encode(x)
-        b = GreedyHashModelUnsupervised.Hash.apply(h)
+        
+        b = GreedyHashModel.Hash.apply(h)
+
         if not self.training:
             return b
-        else:
-            target_b = F.cosine_similarity(b[:x.size(0) // 2], b[x.size(0) // 2:])
-            target_x = F.cosine_similarity(x[:x.size(0) // 2], x[x.size(0) // 2:])
-            loss1 = F.mse_loss(target_b, target_x)
-            loss2 = config["alpha"] * (h.abs() - 1).pow(3).abs().mean()
-            return loss1 + loss2
+
+        return b, h, x
+
+
+class GreedyHashLoss(torch.nn.Module):
+    def __init__(self):
+        super(GreedyHashLoss, self).__init__()
+
+    def forward(self, b, h, x):
+        target_b = F.cosine_similarity(b[:x.size(0) // 2], b[x.size(0) // 2:])
+        target_x = F.cosine_similarity(x[:x.size(0) // 2], x[x.size(0) // 2:])
+        loss1 = F.mse_loss(target_b, target_x)
+        loss2 = config["alpha"] * (h.abs() - 1).pow(3).abs().mean()
+        return loss1 + loss2
 
 
 def trainer(config, bit):
@@ -77,11 +89,15 @@ def trainer(config, bit):
    
     """Model"""
     device = torch.device('cuda')
-    net = GreedyHashModelUnsupervised(bit, config)
+    net = GreedyHashModel(bit, config)
     net = net.to(device)
+    
+    criterion = GreedyHashLoss()
 
     """Optimizer Setting"""
-    optimizer = config["optimizer"]["type"](net.parameters(), **(config["optimizer"]["optim_params"]))
+    # optimizer = config["optimizer"]["type"](net.parameters(), **(config["optimizer"]["optim_params"]))
+    optimizer = config["optimizer"]["type"]([{"params": net.fc_encode.parameters(), "lr": config["optimizer"]["lr"]},
+                                             {"params": net.vit.parameters(), "lr": config["optimizer"]["backbone_lr"]}])
 
     """Data Parallel"""
     net = torch.nn.DataParallel(net)
@@ -90,9 +106,9 @@ def trainer(config, bit):
     for epoch in range(config["epoch"]):
 
         """lr decrease"""
-        lr = config["optimizer"]["optim_params"]["lr"] * (0.1 ** (epoch // config["optimizer"]["epoch_lr_decrease"]))
-        for param_group in optimizer.param_groups:
-            param_group['lr'] = lr
+        # lr = config["optimizer"]["optim_params"]["lr"] * (0.1 ** (epoch // config["optimizer"]["epoch_lr_decrease"]))
+        # for param_group in optimizer.param_groups:
+        #     param_group['lr'] = lr
 
         current_time = time.strftime('%H:%M:%S', time.localtime(time.time()))
         print("%s-%s[%2d/%2d][%s] bit:%d, dataset:%s, training...." % (
@@ -104,7 +120,9 @@ def trainer(config, bit):
             image = image.to(device)
             optimizer.zero_grad()
 
-            loss = net(image)
+            b, h, x = net(image)
+            
+            loss = criterion(b, h, x)
             train_loss += loss.item()
 
             loss.backward()
