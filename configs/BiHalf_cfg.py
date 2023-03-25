@@ -15,7 +15,7 @@ def get_config(start_time):
 
         "info": "BiHalf Unsupervised",
         "backbone": "ViT-B_16", 
-        "pretrained_dir": "pretrained_vit/imagenet21k_imagenet2012_ViT-B_16.npz",
+        "pretrained_dir": "pretrained_vit/imagenet21k_imagenet2012_ViT-B_16-224.npz",
         
         "optimizer": {"type": optim.Adam, "epoch_lr_decrease": 30,
                       "optim_params": {"lr": 0.001}},
