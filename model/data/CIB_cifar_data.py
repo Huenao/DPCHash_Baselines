@@ -44,7 +44,7 @@ class Data:
                     get_test=True):
         train_dataset = MyTrainDataset(self.X_train, self.Y_train, self.train_transforms)
 
-        if(self.dataset == 'cifar10'):
+        if(self.dataset == 'cifar10-1'):
             val_dataset = MyTestDataset(self.X_val, self.Y_val, self.test_cifar10_transforms, self.dataset)
             test_dataset = MyTestDataset(self.X_test, self.Y_test, self.test_cifar10_transforms, self.dataset)
             database_dataset = MyTestDataset(self.X_database, self.Y_database, self.test_cifar10_transforms, self.dataset)
@@ -111,7 +111,7 @@ class MyTestDataset(Dataset):
         self.transform  = transform
         self.dataset = dataset
     def __getitem__(self, index):
-        if self.dataset == 'cifar10':
+        if self.dataset == 'cifar10-1':
             pilImg = Image.fromarray(self.data[index])
             return (self.transform(pilImg),self.labels[index])
         else:
