@@ -17,7 +17,6 @@ def get_config(start_time):
         "backbone": "ViT-B_16", 
         "pretrained_dir": "pretrained_vit/imagenet21k_imagenet2012_ViT-B_16-224.npz",
 
-        "frozen_backbone": True,
         "optimizer": {"type": optim.Adam,
                       "optim_params": {"lr": 0.001}},
         "epoch": 100,
