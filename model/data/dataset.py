@@ -60,19 +60,18 @@ def image_transform(resize_size, crop_size, data_set, cfg_info):
         else:
             step = [transforms.RandomHorizontalFlip(), transforms.RandomCrop(crop_size)]
             return transforms.Compose([transforms.Resize(resize_size)]
-                                            + step +
-                                            [transforms.ToTensor(),
-                                            transforms.Normalize(mean=[0.5, 0.5, 0.5], std=[0.5, 0.5, 0.5]),
-                                            # transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
-                                            ])
+                                       + step +
+                                      [transforms.ToTensor(),
+                                       transforms.Normalize(mean=[0.5, 0.5, 0.5], std=[0.5, 0.5, 0.5]),
+                                       # transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
+                                      ])
 
     else:
-        return transforms.Compose([
-                                    transforms.Resize((resize_size, resize_size)),
-                                    transforms.ToTensor(),
-                                    transforms.Normalize([0.5, 0.5, 0.5], [0.5, 0.5, 0.5])
-                                    # transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),                             
-                                ])
+        return transforms.Compose([transforms.Resize(resize_size),
+                                   transforms.ToTensor(),
+                                   transforms.Normalize([0.5, 0.5, 0.5], [0.5, 0.5, 0.5])
+                                   # transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
+                                   ])
 
 
 def My_dataset(config):

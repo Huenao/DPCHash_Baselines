@@ -29,9 +29,9 @@ class ImageList_CIB(object):
         return len(self.imgs)
 
 
-def get_transform_CIB():
+def get_transform_CIB(resize_size, crop_size):
     color_jitter = transforms.ColorJitter(0.4,0.4,0.4,0.1)
-    train_transforms = transforms.Compose([transforms.RandomResizedCrop(size = 224,scale=(0.5, 1.0)),
+    train_transforms = transforms.Compose([transforms.RandomResizedCrop(size = crop_size,scale=(0.5, 1.0)),
                                         transforms.RandomHorizontalFlip(),
                                         transforms.RandomApply([color_jitter], p = 0.7),
                                         transforms.RandomGrayscale(p  = 0.2),
@@ -41,7 +41,7 @@ def get_transform_CIB():
                                         transforms.Normalize([0.5, 0.5, 0.5], [0.5, 0.5, 0.5]) 
                                     ])
     test_transforms = transforms.Compose([
-                                    transforms.Resize((224, 224)),
+                                    transforms.Resize(resize_size),
                                     transforms.ToTensor(),
                                     # transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])     
                                     transforms.Normalize([0.5, 0.5, 0.5], [0.5, 0.5, 0.5])                                
@@ -50,35 +50,36 @@ def get_transform_CIB():
 
 
 def get_data_CIB(config):
-
-    dsets = {}
-    dset_loaders = {}
-    data_config = config["data"]
-    train_transform, test_transform = get_transform_CIB()
+    data_config = config["data_list"]
+    train_transform, test_transform = get_transform_CIB(config["resize_size"], config["crop_size"])
     train_dataset = ImageList_CIB(config["data_path"],
-                                    open(data_config["train_set"]["list_path"]).readlines(),
+                                    open(data_config["train_dataset"]).readlines(),
                                     transform=train_transform, train=True)
     
 
     test_dataset = ImageList_CIB(config["data_path"],
-                                    open(data_config["test"]["list_path"]).readlines(),
+                                    open(data_config["test_dataset"]).readlines(),
                                     transform=test_transform, train=False)
 
     database_dataset = ImageList_CIB(config["data_path"],
-                                    open(data_config["database"]["list_path"]).readlines(),
+                                    open(data_config["database_dataset"]).readlines(),
                                     transform=test_transform, train=False)
-    print('train dataset:', len(train_dataset))
-    print('test dataset:', len(test_dataset))
-    print('database dataset:', len(database_dataset))
+    
+    print('train_dataset', len(train_dataset))
+    print('test_dataset', len(test_dataset))
+    print('database_dataset', len(database_dataset))
 
     train_loader = torch.utils.data.DataLoader(train_dataset,
-                            batch_size=data_config["train_set"]["batch_size"],
-                            shuffle=True, num_workers=4)
+                                               batch_size=config['batch_size'],
+                                               shuffle=True, 
+                                               num_workers=config['num_workers'])
     test_loader = torch.utils.data.DataLoader(test_dataset,
-                            batch_size=data_config["test"]["batch_size"],
-                            shuffle=False, num_workers=4)
+                                              batch_size=config['batch_size'],
+                                              shuffle=False, 
+                                              num_workers=config['num_workers'])
     database_loader = torch.utils.data.DataLoader(database_dataset,
-                            batch_size=data_config["database"]["batch_size"],
-                            shuffle=False, num_workers=4)
+                                                  batch_size=config['batch_size'],
+                                                  shuffle=False, 
+                                                  num_workers=config['num_workers'])
 
     return train_loader, test_loader, database_loader
