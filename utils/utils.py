@@ -7,10 +7,6 @@ import torch
 from tqdm import tqdm
 
 
-draw_range = [1, 500, 1000, 1500, 2000, 2500, 3000, 3500, 4000, 4500, 5000, 5500, 6000, 6500, 7000, 7500, 8000, 8500,
-              9000, 9500, 10000]
-
-
 class MyEncoder(json.JSONEncoder):
     def default(self, obj):
 
@@ -23,41 +19,6 @@ class MyEncoder(json.JSONEncoder):
 def save_config(config, save_path):
     with open(os.path.join(save_path, 'config.json'), 'w') as f:
         json.dump(config, f, cls=MyEncoder, indent=4, separators=(', ', ': '))
-
-
-def pr_curve(rF, qF, rL, qL, draw_range=draw_range):
-    #  https://blog.csdn.net/HackerTom/article/details/89425729
-    n_query = qF.shape[0]
-    Gnd = (np.dot(qL, rL.transpose()) > 0).astype(np.float32)
-    Rank = np.argsort(CalcHammingDist(qF, rF))
-
-    P, R = [], []
-
-    for k in tqdm(draw_range):
-
-        p = np.zeros(n_query)
-        r = np.zeros(n_query)
-
-        for it in range(n_query):
-
-            gnd = Gnd[it]
-            gnd_all = np.sum(gnd)
-
-            if gnd_all == 0:
-                continue
-
-            asc_id = Rank[it][:k]
-
-            gnd = gnd[asc_id]
-            gnd_r = np.sum(gnd)
-
-            p[it] = gnd_r / k
-            r[it] = gnd_r / gnd_all
-
-        P.append(np.mean(p))
-        R.append(np.mean(r))
-
-    return P, R
 
 
 def compute_result(dataloader, net):
@@ -127,7 +88,50 @@ def CalcTopMap(rB, qB, retrievalL, queryL, topk):
     return topkmap
 
 
-def evalModel(test_loader, dataset_loader, net, Best_mAP, bit, config, epoch, f):
+# faster but more memory
+def CalcTopMapWithPR(qB, queryL, rB, retrievalL, topk):
+    num_query = queryL.shape[0]
+    num_gallery = retrievalL.shape[0]
+    topkmap = 0
+    prec = np.zeros((num_query, num_gallery))
+    recall = np.zeros((num_query, num_gallery))
+    for iter in tqdm(range(num_query)):
+        gnd = (np.dot(queryL[iter, :], retrievalL.transpose()) > 0).astype(np.float32)
+        hamm = CalcHammingDist(qB[iter, :], rB)
+        ind = np.argsort(hamm)
+        gnd = gnd[ind]
+
+        tgnd = gnd[0:topk]
+        tsum = np.sum(tgnd).astype(int)
+        if tsum == 0:
+            continue
+        count = np.linspace(1, tsum, tsum)
+        all_sim_num = np.sum(gnd)
+
+        prec_sum = np.cumsum(gnd)
+        return_images = np.arange(1, num_gallery + 1)
+
+        prec[iter, :] = prec_sum / return_images
+        recall[iter, :] = prec_sum / all_sim_num
+
+        assert recall[iter, -1] == 1.0
+        assert all_sim_num == prec_sum[-1]
+
+        tindex = np.asarray(np.where(tgnd == 1)) + 1.0
+        topkmap_ = np.mean(count / (tindex))
+        topkmap = topkmap + topkmap_
+    topkmap = topkmap / num_query
+    index = np.argwhere(recall[:, -1] == 1.0)
+    index = index.squeeze()
+    prec = prec[index]
+    recall = recall[index]
+    cum_prec = np.mean(prec, 0)
+    cum_recall = np.mean(recall, 0)
+
+    return topkmap, cum_prec, cum_recall
+
+
+def evalModel(test_loader, dataset_loader, net, Best_mAP, bit, config, epoch, f, num_dataset):
     print("calculating test binary code......")
     if config['info'] == "CIBHash":
         tst_binary, tst_label = compute_result_CIB(test_loader, net)
@@ -141,20 +145,40 @@ def evalModel(test_loader, dataset_loader, net, Best_mAP, bit, config, epoch, f)
         trn_binary, trn_label = compute_result(dataset_loader, net)
 
     print("calculating map.......")
-    mAP = CalcTopMap(trn_binary.numpy(), tst_binary.numpy(), trn_label.numpy(), tst_label.numpy(),
-                     config["topK"])
+    if "pr_curve_path" not in  config:
+        mAP = CalcTopMap(trn_binary.numpy(), tst_binary.numpy(), 
+                         trn_label.numpy(), tst_label.numpy(),
+                         config["topK"])
+
+    else:
+        # need more memory
+        mAP, cum_prec, cum_recall = CalcTopMapWithPR(tst_binary.numpy(), tst_label.numpy(),
+                                                     trn_binary.numpy(), trn_label.numpy(),
+                                                     config["topK"])
+        
+        if mAP > Best_mAP:
+
+            index_range = num_dataset // 100
+            index = [i * 100 - 1 for i in range(1, index_range + 1)]
+            max_index = max(index)
+            overflow = num_dataset - index_range * 100
+            index = index + [max_index + i for i in range(1, overflow + 1)]
+            c_prec = cum_prec[index]
+            c_recall = cum_recall[index]
+
+            pr_data = {
+                "index": index,
+                "P": c_prec.tolist(),
+                "R": c_recall.tolist()
+            }
+            os.makedirs(os.path.dirname(config["pr_curve_path"]), exist_ok=True)
+            with open(config["pr_curve_path"], 'w') as pr_f:
+                pr_f.write(json.dumps(pr_data))
+            print("pr curve save to ", config["pr_curve_path"])
+
     if mAP > Best_mAP:
 
         Best_mAP = mAP
-
-        P, R = pr_curve(trn_binary.numpy(), tst_binary.numpy(), trn_label.numpy(), tst_label.numpy())
-
-        print(f"Precision Recall Curve data:\n{config['info']}:[{P},{R}],")
-
-        f.write('PR | Epoch %d | ' % (epoch))
-        for PR in range(len(P)):
-            f.write('%.5f %.5f ' % (P[PR], R[PR]))
-        f.write('\n')
 
         if "logs_path" in config:
             if not os.path.exists(config["logs_path"]):
@@ -167,8 +191,14 @@ def evalModel(test_loader, dataset_loader, net, Best_mAP, bit, config, epoch, f)
                 if f"{config['dataset']}-{bit}-" in file:
                     os.remove(os.path.join(config['logs_path'], file))
 
+            np.save(os.path.join(config["logs_path"], config["dataset"] + "-%d-" % bit + str(round(mAP, 5)) + "-tst_label.npy"),
+                    tst_label.numpy())
+            np.save(os.path.join(config["logs_path"], config["dataset"] + "-%d-" % bit + str(round(mAP, 5)) + "-tst_binary.npy"),
+                    tst_binary.numpy())
             np.save(os.path.join(config["logs_path"], config["dataset"] + "-%d-" % bit + str(round(mAP, 5)) + "-trn_binary.npy"),
                     trn_binary.numpy())
+            np.save(os.path.join(config["logs_path"], config["dataset"] + "-%d-" % bit + str(round(mAP, 5)) + "-trn_label.npy"),
+                    trn_label.numpy())
             torch.save(net.state_dict(),
                     os.path.join(config["logs_path"], config["dataset"] + "-%d-" % bit + str(round(mAP, 5)) + "-model.pt"))
 

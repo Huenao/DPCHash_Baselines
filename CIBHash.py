@@ -144,12 +144,12 @@ def trainer(config, bit):
     """DataLoader"""
     if "cifar" in config['dataset']:
         data = CIB_CIFAR_DataLoader(config['dataset'])
-        train_loader, test_loader, _, database_loader = data.get_loaders(
+        train_loader, test_loader, _, database_loader,  = data.get_loaders(
             config['batch_size'], 8, 
             shuffle_train=True, get_test=False
         )
     else:
-        train_loader, test_loader, database_loader = get_data_CIB(config)
+        train_loader, test_loader, database_loader, num_train, num_test, num_database = get_data_CIB(config)
 
     """Model"""
     device = torch.device('cuda')
@@ -192,11 +192,13 @@ def trainer(config, bit):
         kl_loss = kl_loss / len(train_loader)
 
         print("\b\b\b\b\b\b\b loss:%.5f | con_loss:%.5f | kl_loss:%.5f" % (train_loss, con_loss, kl_loss))
+        train_logfile.write('Train | %s-%s[%2d/%2d][%s] bit:%d, dataset:%s | Loss: %.5f | Con Loss: %.5f | KL Loss: %.5f \n'% 
+                    (config["info"], config["backbone"], epoch+1, config["epoch"], current_time, bit, config["dataset"], train_loss, con_loss, kl_loss))
 
         if (epoch + 1) % config["test_map"] == 0:
             net.eval()
             with torch.no_grad():
-                Best_mAP = evalModel(test_loader, database_loader, net, Best_mAP, bit, config, epoch, train_logfile)
+                Best_mAP = evalModel(test_loader, database_loader, net, Best_mAP, bit, config, epoch+1, train_logfile, num_database)
 
 
 def setup_seed(seed):

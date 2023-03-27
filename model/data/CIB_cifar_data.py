@@ -74,7 +74,8 @@ class Data:
                                                     shuffle=False,
                                                     num_workers=num_workers)
         
-        return train_loader, val_loader, test_loader, database_loader
+        return train_loader, val_loader, test_loader, database_loader, \
+               len(train_dataset), len(val_dataset), len(database_dataset)
 
 
 class CIB_CIFAR_DataLoader(Data):

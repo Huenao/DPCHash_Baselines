@@ -82,4 +82,5 @@ def get_data_CIB(config):
                                                   shuffle=False, 
                                                   num_workers=config['num_workers'])
 
-    return train_loader, test_loader, database_loader
+    return train_loader, test_loader, database_loader, \
+           len(train_dataset), len(test_dataset), len(database_dataset)

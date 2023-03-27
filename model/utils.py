@@ -105,5 +105,4 @@ def get_h14_config():
 
 def get_vts16_config(config):
     config.hash_dropout_rate = 0.5
-    config.pretrained_dir = "pretrained_vit/imagenet21k_imagenet2012_ViT-B_16.npz"
     return config
