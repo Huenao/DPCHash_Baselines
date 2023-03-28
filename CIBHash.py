@@ -144,7 +144,7 @@ def trainer(config, bit):
     """DataLoader"""
     if "cifar" in config['dataset']:
         data = CIB_CIFAR_DataLoader(config['dataset'])
-        train_loader, test_loader, _, database_loader,  = data.get_loaders(
+        train_loader, test_loader, _, database_loader, num_train, num_test, num_database = data.get_loaders(
             config['batch_size'], 8, 
             shuffle_train=True, get_test=False
         )
