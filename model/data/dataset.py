@@ -67,7 +67,7 @@ def image_transform(resize_size, crop_size, data_set, cfg_info):
                                       ])
 
     else:
-        return transforms.Compose([transforms.Resize(resize_size),
+        return transforms.Compose([transforms.Resize((resize_size, resize_size)),
                                    transforms.ToTensor(),
                                    transforms.Normalize([0.5, 0.5, 0.5], [0.5, 0.5, 0.5])
                                    # transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
