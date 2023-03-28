@@ -59,7 +59,7 @@ def image_transform(resize_size, crop_size, data_set, cfg_info):
         
         else:
             step = [transforms.RandomHorizontalFlip(), transforms.RandomCrop(crop_size)]
-            return transforms.Compose([transforms.Resize(resize_size)]
+            return transforms.Compose([transforms.Resize((resize_size, resize_size))]
                                        + step +
                                       [transforms.ToTensor(),
                                        transforms.Normalize(mean=[0.5, 0.5, 0.5], std=[0.5, 0.5, 0.5]),
