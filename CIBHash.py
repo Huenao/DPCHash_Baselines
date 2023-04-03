@@ -56,7 +56,7 @@ class NtXentLoss(nn.Module):
         positive_samples = torch.cat((sim_i_j, sim_j_i), dim=0).view(N, 1)
         negative_samples = sim[mask].view(N, -1)
 
-        labels = torch.zeros(N).to(device).long()
+        labels = torch.zeros(N).cuda().long()
         logits = torch.cat((positive_samples, negative_samples), dim=1)
         loss = self.criterion(logits, labels)
         loss /= N
@@ -69,9 +69,10 @@ class CIBHash(nn.Module):
         vit_config.pretrained_dir = config['pretrained_dir']
         self.vit = VisionTransformer(vit_config, 224, num_classes=1000, zero_head=False, vis=True)
         self.vit.load_from(np.load(vit_config.pretrained_dir))
-        for param in self.vit.parameters():
-            param.requires_grad = False
-        self.vit.eval()
+        if config["frozen backbone"]:
+            for param in self.vit.parameters():
+                param.requires_grad = False
+            self.vit.eval()
 
         # self.vgg = models.vgg16(pretrained=True)
         # self.vgg.classifier = nn.Sequential(*list(self.vgg.classifier.children())[:6])
@@ -157,7 +158,8 @@ def trainer(config, bit):
     net = net.to(device)
 
     """Optimizer Setting"""
-    optimizer = config["optimizer"]["type"](net.encoder.parameters(), **(config["optimizer"]["optim_params"]))
+    optimizer = config["optimizer"]["type"]([{"params": net.encoder.parameters(), "lr": config["optimizer"]["lr"]},
+                                             {"params": net.vit.parameters(), "lr": config["optimizer"]["backbone_lr"]}])
 
     """Data Parallel"""
     net = torch.nn.DataParallel(net)

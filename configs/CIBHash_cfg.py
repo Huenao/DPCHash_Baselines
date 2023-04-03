@@ -7,9 +7,9 @@ from .utils import config_dataset
 
 def get_config(start_time):
     config = {
-        # "dataset": "cifar10-1",
+        "dataset": "cifar10-1",
         # "dataset": "coco",
-        "dataset": "nuswide_21",
+        # "dataset": "nuswide_21",
         
         "bit_list": [16, 32, 64],
 
@@ -17,8 +17,10 @@ def get_config(start_time):
         "backbone": "ViT-B_16", 
         "pretrained_dir": "pretrained_vit/imagenet21k_imagenet2012_ViT-B_16-224.npz",
 
+        "frozen backbone": True,
         "optimizer": {"type": optim.Adam, 
-                      "optim_params": {"lr": 0.001}},
+                      "lr": 0.001,
+                      "backbone_lr": 1e-5},
         "epoch": 100,
         "test_map": 5,
         "batch_size": 64, 
