@@ -102,7 +102,7 @@ def trainer(config, bit):
         if (epoch + 1) % config["test_map"] == 0:
             net.eval()
             with torch.no_grad():
-                Best_mAP = evalModel(test_loader, database_loader, net, Best_mAP, bit, config, epoch, train_logfile)
+                Best_mAP = evalModel(test_loader, database_loader, net, Best_mAP, bit, config, epoch, train_logfile, num_database)
 
 
 def setup_seed(seed):
