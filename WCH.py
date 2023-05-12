@@ -114,7 +114,7 @@ def setup_seed(seed):
 
 
 if __name__ == "__main__":
-    start_time = time.strftime('%Y-%m-%d_%H:%M:%S', time.localtime(time.time()))
+    start_time = time.strftime('%Y-%m-%d_%H-%M-%S', time.localtime(time.time()))
     setup_seed(2022)
     
     config = WCH_get_config(start_time)
