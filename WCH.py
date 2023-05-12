@@ -31,26 +31,6 @@ class CL(nn.Module):
 
         return loss
     
-class WCH(nn.Module):
-    def __init__(self, config, bit):
-        super(WCH, self).__init__()
-        vit_config = CONFIGS[config['backbone']]
-        vit_config.pretrained_dir = config['pretrained_dir']
-
-        self.net = VisionTransformer(vit_config, 224, num_classes=config['n_class'], zero_head=True, hash_bit=bit)
-        self.net.load_from(np.load(vit_config.pretrained_dir))
-
-        self.criterion = CL(config, bit)
-
-    def train_foward(self, image1, image2):
-        h1, h2, weighted = self.net.train_forward(image1, image2)
-        loss = self.criterion(h1, h2, weighted)
-
-        return loss
-    
-    def forward(self, x):
-        return self.net(x)
-    
 
 def trainer(config, bit):
     Best_mAP = 0
@@ -66,16 +46,18 @@ def trainer(config, bit):
 
     """Model"""
     device = torch.device('cuda')
-    net = WCH(config, bit)
-    net = net.to(device)
+    vit_config = CONFIGS[config['backbone']]
+    vit_config.pretrained_dir = config['pretrained_dir']
+
+    net = VisionTransformer(vit_config, 224, num_classes=config['n_class'], zero_head=True, hash_bit=bit).to(device)
+    net.load_from(np.load(vit_config.pretrained_dir))
+    
+    criterion = CL(config, bit)
 
     """Optimizer Setting"""
     optimizer = config["optimizer"]["type"]([{"params": net.parameters(), "lr": config["optimizer"]["lr"]}
                                             ])
     scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=config["epoch"])
-
-    """Data Parallel"""
-    net = torch.nn.DataParallel(net)
 
     """Training"""
     for epoch in range(config["epoch"]):
@@ -89,11 +71,17 @@ def trainer(config, bit):
 
         for image1, image2 in train_loader:
             image1, image2 = image1.to(device), image2.to(device)
+            
             optimizer.zero_grad()
-            loss = net.module.train_foward(image1, image2)
+            
+            h1, h2, weight = net.train_forward(image1, image2)
+            loss = criterion(h1, h2, weight)
+            
             train_loss += loss.item()
             loss.backward()
+            
             optimizer.step()
+            
         train_loss = train_loss / len(train_loader)
         scheduler.step()
 
