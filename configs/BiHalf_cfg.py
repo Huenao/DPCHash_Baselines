@@ -25,7 +25,6 @@ def get_config(start_time):
         "batch_size": 64, 
         "num_workers": 4,
         "logs_path": "logs",
-        "pr_curve_path": "pr_curve.json",
 
         "resize_size": 224,
         "crop_size": 224,
@@ -34,7 +33,6 @@ def get_config(start_time):
     }
     config = config_dataset(config)
     config["logs_path"] = os.path.join(config["logs_path"], config['info'], start_time)
-    config["pr_curve_path"] = os.path.join(config["logs_path"], config["pr_curve_path"])
 
     if not os.path.exists(config["logs_path"]):
         os.makedirs(config["logs_path"])
