@@ -24,7 +24,6 @@ def get_config(start_time):
         "batch_size": 32,
         "num_workers": 4,
         "logs_path": "logs",
-        "pr_curve_path": "pr_curve.json",
 
         "resize_size": 256,
         "crop_size": 224,

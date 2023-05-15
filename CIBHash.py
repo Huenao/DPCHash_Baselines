@@ -219,4 +219,5 @@ if __name__ == "__main__":
     save_config(config, config["logs_path"])
     
     for bit in config["bit_list"]:
+        config["pr_curve_path"] = os.path.join(config["logs_path"], f"pr_curve_{bit}.json")
         trainer(config, bit)
