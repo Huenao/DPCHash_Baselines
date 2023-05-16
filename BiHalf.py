@@ -127,7 +127,7 @@ def trainer(config, bit):
         if (epoch + 1) % config["test_map"] == 0:
             net.eval()
             with torch.no_grad():
-                Best_mAP = evalModel(test_loader, database_loader, net, Best_mAP, bit, config, epoch+1, train_logfile, num_database)
+                Best_mAP = evalModel(test_loader, database_loader, net, Best_mAP, bit, config, epoch+1, train_logfile)
 
 
 def setup_seed(seed):
@@ -146,5 +146,4 @@ if __name__ == "__main__":
     save_config(config, config["logs_path"])
     
     for bit in config["bit_list"]:
-        config["pr_curve_path"] = os.path.join(config["logs_path"], f"pr_curve_{bit}.json")
         trainer(config, bit)
