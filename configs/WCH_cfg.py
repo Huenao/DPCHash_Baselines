@@ -32,6 +32,7 @@ def get_config(start_time):
     }
     config = config_dataset(config)
     config["logs_path"] = os.path.join(config["logs_path"], config['info'], start_time)
+    
     if not os.path.exists(config["logs_path"]):
         os.makedirs(config["logs_path"])
     
