@@ -134,7 +134,7 @@ def get_cifar():
                                 )
 
     database_dataset = dsets.CIFAR10(root='./dataset/cifar/',
-                                    train=False
+                                    train=True
                                     )
 
     # train with 5000 images
