@@ -142,8 +142,6 @@ def evalModel(test_loader, dataset_loader, net, Best_mAP, bit, config, epoch, f)
                 os.makedirs(config["logs_path"])
             
             print("save in ", config["logs_path"])
-
-            P, R = pr_curve(trn_binary.numpy(), tst_binary.numpy(), trn_label.numpy(), tst_label.numpy())
             
             if "cifar" in config["dataset"]:
                 P, R = pr_curve(trn_binary.numpy(), tst_binary.numpy(), trn_label.numpy(), tst_label.numpy(), draw_range=cifar_d_range)
