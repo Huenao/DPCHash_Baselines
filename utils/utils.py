@@ -7,8 +7,10 @@ import torch
 from tqdm import tqdm
 
 
-d_range = [i for i in range(0, 10000, 500)] + [i for i in range(10000, 50001, 2500)]
-d_range[0] = 1
+cifar_d_range = [i for i in range(0, 10000, 500)] + [i for i in range(10000, 50001, 2500)]
+cifar_d_range[0] = 1
+coco_d_range = [i for i in range(0, 20000, 1000) + [i for i in range(20000, 100001, 5000)] + [105000, 110000, 115000, 117218]]
+coco_d_range[0] = 1
 
 
 class MyEncoder(json.JSONEncoder):
@@ -92,7 +94,7 @@ def CalcTopMap(rB, qB, retrievalL, queryL, topk):
     return topkmap
 
 
-def pr_curve(rF, qF, rL, qL, draw_range=d_range):
+def pr_curve(rF, qF, rL, qL, draw_range):
     #  https://blog.csdn.net/HackerTom/article/details/89425729
     n_query = qF.shape[0]
     Gnd = (np.dot(qL, rL.transpose()) > 0).astype(np.float32)
@@ -144,7 +146,15 @@ def evalModel(test_loader, dataset_loader, net, Best_mAP, bit, config, epoch, f)
             P, R = pr_curve(trn_binary.numpy(), tst_binary.numpy(), trn_label.numpy(), tst_label.numpy())
             
             if "cifar" in config["dataset"]:
-                P, R = pr_curve(trn_binary.numpy(), tst_binary.numpy(), trn_label.numpy(), tst_label.numpy())
+                P, R = pr_curve(trn_binary.numpy(), tst_binary.numpy(), trn_label.numpy(), tst_label.numpy(), draw_range=cifar_d_range)
+                
+                print(f'Precision Recall Curve data:\n"{config["info"]}":[{P},{R}],')
+                f.write('PR | Epoch %d | ' % (epoch))
+                f.write(f'[{P}, {R}]')
+                f.write('\n')
+            
+            elif "coco" in config["dataset"]:
+                P, R = pr_curve(trn_binary.numpy(), tst_binary.numpy(), trn_label.numpy(), tst_label.numpy(), draw_range=coco_d_range)
                 
                 print(f'Precision Recall Curve data:\n"{config["info"]}":[{P},{R}],')
                 f.write('PR | Epoch %d | ' % (epoch))
