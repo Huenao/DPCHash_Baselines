@@ -9,7 +9,7 @@ from tqdm import tqdm
 
 cifar_d_range = [i for i in range(0, 10000, 500)] + [i for i in range(10000, 50001, 2500)]
 cifar_d_range[0] = 1
-coco_d_range = [i for i in range(0, 20000, 1000) + [i for i in range(20000, 100001, 5000)] + [105000, 110000, 115000, 117218]]
+coco_d_range = [i for i in range(0, 20000, 1000)] + [i for i in range(20000, 100001, 5000)] + [105000, 110000, 115000, 117218]
 coco_d_range[0] = 1
 
 
