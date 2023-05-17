@@ -150,6 +150,11 @@ def evalModel(test_loader, dataset_loader, net, Best_mAP, bit, config, epoch, f)
                 f.write('PR | Epoch %d | ' % (epoch))
                 f.write(f'[{P}, {R}]')
                 f.write('\n')
+                
+            # delete old file
+            for file in os.listdir(config['logs_path']):
+                if f"{config['dataset']}-{bit}-" in file:
+                    os.remove(os.path.join(config['logs_path'], file))
 
             # np.save(os.path.join(config["logs_path"], config["dataset"] + "-%d-" % bit + str(round(mAP, 5)) + "-tst_label.npy"),
             #         tst_label.numpy())
@@ -160,7 +165,7 @@ def evalModel(test_loader, dataset_loader, net, Best_mAP, bit, config, epoch, f)
             # np.save(os.path.join(config["logs_path"], config["dataset"] + "-%d-" % bit + str(round(mAP, 5)) + "-trn_label.npy"),
             #         trn_label.numpy())
             torch.save(net.state_dict(),
-                    os.path.join(config["logs_path"], config["dataset"] + "-%d-" % bit + "-epoch%d-" % epoch + str(round(mAP, 5)) + "-model.pt"))
+                    os.path.join(config["logs_path"], config["dataset"] + "-%d-" % bit + str(round(mAP, 5)) + "-model.pt"))
         
     print("%s epoch:%d, bit:%d, dataset:%s, MAP:%.5f, Best MAP: %.5f" % (
         config["info"], epoch, bit, config["dataset"], mAP, Best_mAP))
