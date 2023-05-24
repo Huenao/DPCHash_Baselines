@@ -164,14 +164,14 @@ def evalModel(test_loader, dataset_loader, net, Best_mAP, bit, config, epoch, f)
                 if f"{config['dataset']}-{bit}-" in file:
                     os.remove(os.path.join(config['logs_path'], file))
 
-            # np.save(os.path.join(config["logs_path"], config["dataset"] + "-%d-" % bit + str(round(mAP, 5)) + "-tst_label.npy"),
-            #         tst_label.numpy())
-            # np.save(os.path.join(config["logs_path"], config["dataset"] + "-%d-" % bit + str(round(mAP, 5)) + "-tst_binary.npy"),
-            #         tst_binary.numpy())
-            # np.save(os.path.join(config["logs_path"], config["dataset"] + "-%d-" % bit + str(round(mAP, 5)) + "-trn_binary.npy"),
-            #         trn_binary.numpy())
-            # np.save(os.path.join(config["logs_path"], config["dataset"] + "-%d-" % bit + str(round(mAP, 5)) + "-trn_label.npy"),
-            #         trn_label.numpy())
+            np.save(os.path.join(config["logs_path"], config["dataset"] + "-%d-" % bit + str(round(mAP, 5)) + "-tst_label.npy"),
+                    tst_label.numpy())
+            np.save(os.path.join(config["logs_path"], config["dataset"] + "-%d-" % bit + str(round(mAP, 5)) + "-tst_binary.npy"),
+                    tst_binary.numpy())
+            np.save(os.path.join(config["logs_path"], config["dataset"] + "-%d-" % bit + str(round(mAP, 5)) + "-trn_binary.npy"),
+                    trn_binary.numpy())
+            np.save(os.path.join(config["logs_path"], config["dataset"] + "-%d-" % bit + str(round(mAP, 5)) + "-trn_label.npy"),
+                    trn_label.numpy())
             torch.save(net.state_dict(),
                     os.path.join(config["logs_path"], config["dataset"] + "-%d-" % bit + str(round(mAP, 5)) + "-model.pt"))
         
