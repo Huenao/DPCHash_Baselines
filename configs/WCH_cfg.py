@@ -11,7 +11,7 @@ def get_config(start_time):
         # "dataset": "coco",
         # "dataset": "nuswide_21",
 
-        "bit_list": [16, 32, 64],
+        "bit_list": [16, 32, 64, 128],
 
         "info": "WCH",
         "backbone": "ViT-B_16", 
