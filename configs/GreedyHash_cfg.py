@@ -37,7 +37,7 @@ def get_config(start_time):
         os.makedirs(config["logs_path"])
 
     if 'cifar' in config["dataset"]:
-        config["topK"] = 1000
+        config["topK"] = 5000
     else: 
         config["topK"] = 5000
 
