@@ -7,9 +7,11 @@ from .utils import config_dataset
 
 def get_config(start_time):
     config = {
-        "dataset": "cifar10-1",
+        "dataset": "mirflickr",
+        # "dataset": "cifar10-1",
         # "dataset": "coco",
         # "dataset": "nuswide_21",
+        # "dataset": "nuswide_10",
         
         "bit_list": [16, 32, 64, 128],
 
