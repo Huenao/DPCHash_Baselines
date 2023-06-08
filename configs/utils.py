@@ -20,7 +20,7 @@ def config_dataset(config):
     if config["dataset"] == "nuswide_21":
         config["data_path"] = "./dataset/NUS-WIDE/"
     if config["dataset"] == "nuswide_10":
-        config["data_path"] = "./dataset/NUS-WIDE-10/"
+        config["data_path"] = "./dataset/NUS-WIDE/"
     if config["dataset"] == "coco":
         config["data_path"] = "./dataset/coco/"
     if config["dataset"] == "mirflickr":
