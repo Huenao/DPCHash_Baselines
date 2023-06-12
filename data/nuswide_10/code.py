@@ -19,31 +19,44 @@ with open(os.path.join(root, 'targets_onehot_tc10.txt')) as f:
     for line in f.readlines():
         img_label_onehot.append(line.strip())
 
-print(len(img))
-print(len(img_label))
-print(len(img_label_onehot))
-
-
-train_num = 5000
-test_num = 5000
+train_num = 500
+test_num = 500
+train_count = [train_num] * 10
+test_count = [test_num] * 10
+train_data = []
+test_data = []
+database_data = []
 
 perm_index = np.random.permutation(len(img))
 
-
-all_data = []
 for index in perm_index:
-    all_data.append(img[index] + " " + img_label_onehot[index] + "\n")
+    line = img[index] + " " + img_label_onehot[index] + "\n"
+    add_position = "database"
+    for classnum in img_label[index].split():
+        classnum = int(classnum)
+        if train_count[classnum]:
+            add_position = "train"
+            train_count[classnum] -= 1
+            break
+        if test_count[classnum]:
+            add_position = "test"
+            test_count[classnum] -= 1
+            break
 
-query = all_data[:test_num]
-database = all_data[test_num:]
-train = database[:train_num]
+    if add_position == "train":
+        train_data.append(line)
+        database_data.append(line)
+    elif add_position == "test":
+        test_data.append(line)
+    else:
+        database_data.append(line)
 
 with open("database.txt", "w") as f:
-    for line in database:
+    for line in database_data:
         f.write(line)
 with open("train.txt", "w") as f:
-    for line in train:
+    for line in train_data:
         f.write(line)
 with open("test.txt", "w") as f:
-    for line in query:
+    for line in test_data:
         f.write(line)
