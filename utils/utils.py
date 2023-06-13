@@ -13,6 +13,8 @@ coco_d_range = [i for i in range(0, 20000, 1000)] + [i for i in range(20000, 100
 coco_d_range[0] = 1
 nuswide_10_d_range = [i for i in range(0, 30000, 1500)] + [i for i in range(40000, 175001, 7500)] + [180000, 181577]
 nuswide_10_d_range[0] = 1
+flickr_d_range = [i for i in range(0, 5000, 250)] + [i for i in range(5000, 22501, 1250)] + [23000]
+flickr_d_range[0] = 1
 
 class MyEncoder(json.JSONEncoder):
     def default(self, obj):
@@ -167,7 +169,14 @@ def evalModel(test_loader, dataset_loader, net, Best_mAP, bit, config, epoch, f)
                 f.write('PR | Epoch %d | ' % (epoch))
                 f.write(f'[{P}, {R}]')
                 f.write('\n')
-
+                
+            elif "flickr" in config["dataset"]:
+                P, R = pr_curve(trn_binary.numpy(), tst_binary.numpy(), trn_label.numpy(), tst_label.numpy(), draw_range=flickr_d_range)
+                
+                print(f'Precision Recall Curve data:\n"{config["info"]}":[{P},{R}],')
+                f.write('PR | Epoch %d | ' % (epoch))
+                f.write(f'[{P}, {R}]')
+                f.write('\n')
                 
             # delete old file
             for file in os.listdir(config['logs_path']):
