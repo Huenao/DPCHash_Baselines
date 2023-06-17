@@ -123,13 +123,13 @@ def pr_curve(rF, qF, rL, qL, draw_range):
 
 def evalModel(test_loader, dataset_loader, net, Best_mAP, bit, config, epoch, f):
     print("calculating test binary code......")
-    if config['info'] == "CIBHash":
+    if "CIBHash" in config['info']:
         tst_binary, tst_label = compute_result_CIB(test_loader, net)
     else:
         tst_binary, tst_label = compute_result(test_loader, net)
 
     print("calculating dataset binary code.......")
-    if  config['info'] == "CIBHash":
+    if  "CIBHash" in config['info']:
         trn_binary, trn_label = compute_result_CIB(dataset_loader, net)
     else:
         trn_binary, trn_label = compute_result(dataset_loader, net)
